@@ -1,4 +1,6 @@
 using System;
+using OctoClient.Helpers;
+using OctoClient.Models;
 using Octopus.Client;
 using Octopus.Client.Model;
 
@@ -27,92 +29,148 @@ namespace OctoClient
             return;
         }
 
-        public ReleaseResource BuildNewRelease()
+        public ActionResult<ReleaseResource> BuildNewRelease()
         {
             CreateClient();
-            var project = GetProjectOrThrow(_inputs.ProjectName);
+            var releaseResult = new ActionResult<ReleaseResource>();
+            var projectResult = GetProjectResult(_inputs.ProjectName);
 
-            var release = new ReleaseResource
+            releaseResult.Error = projectResult.Error;
+
+            if (projectResult.Result == null)
             {
-                ProjectId = project.Id,
+                return releaseResult;
+            }
+
+            releaseResult.Result = new ReleaseResource
+            {
+                ProjectId = projectResult.Result.Id,
                 Version = _inputs.ReleaseVersion
             };
+            
 
-            return release;
+            return releaseResult;
         }
 
-        public DeploymentResource BuildNewDeployment()
+        public ActionResult<DeploymentResource> BuildNewDeployment()
         {
-            CreateClient();            
-            var project = GetProjectOrThrow(_inputs.ProjectName);
-            var environment = GetEnvironmentOrThrow(_inputs.EnvironmentName);
+            CreateClient();
+            var deploymentResult = new ActionResult<DeploymentResource>();
+            var projectResult = GetProjectResult(_inputs.ProjectName);
+            var envResult = GetEnvironmentResult(_inputs.EnvironmentName);
 
-            var deployment = new DeploymentResource
+            deploymentResult.Error.ErrorCount += projectResult.Error.ErrorCount;
+            deploymentResult.Error.ErrorMessages.AddRange(projectResult.Error.ErrorMessages);
+            deploymentResult.Error.ErrorCount += envResult.Error.ErrorCount;
+            deploymentResult.Error.ErrorMessages.AddRange(envResult.Error.ErrorMessages);
+
+            if (projectResult.HasErrors() || envResult.HasErrors())
+            {
+                return deploymentResult;
+            }
+
+            deploymentResult.Result = new DeploymentResource
             {
                 ReleaseId = _inputs.ReleaseId,
-                ProjectId = project.Id,
-                EnvironmentId = environment.Id
+                ProjectId = projectResult.Result.Id,
+                EnvironmentId = envResult.Result.Id
             };
 
-            return deployment;
+            return deploymentResult;
         }
 
-        public void CreateRelease()
+        public ActionResult<OctoRelease> CreateReleaseResult()
         {
             CreateClient();
-            var space = _client.ForSystem().Spaces.FindByName(_inputs.SpaceName);
+            var relResult = new ActionResult<OctoRelease>();
 
+            var space = _client.ForSystem().Spaces.FindByName(_inputs.SpaceName);
             var newRelease = BuildNewRelease();
+            relResult.Error = newRelease.Error;
+
+            if (newRelease.Result == null)
+            {
+                return relResult;
+            }
 
             var repo = new OctopusRepository(_client, RepositoryScope.ForSpace(space));
-            var release = repo.Releases.Create(newRelease);
 
-            // release.Id
+            try
+            {
+                var relResource = repo.Releases.Create(newRelease.Result);
+                relResult.Result = relResource.ToOctoRelease();
+            }
+            catch (Exception ex)
+            {
+                relResult.Error.ErrorCount++;
+                relResult.Error.ParseException(ex);
+            }
 
-            return;
+            return relResult;
         }
 
-        public void CreateDeployment()
+        public ActionResult<OctoDeployment> CreateDeploymentResult()
         {
             CreateClient();
+            var depResult = new ActionResult<OctoDeployment>();
+
             var space = _client.ForSystem().Spaces.FindByName(_inputs.SpaceName);
-
             var newDeploy = BuildNewDeployment();
+            depResult.Error = newDeploy.Error;
+
+            if (depResult.HasErrors())
+            {
+                return depResult;
+            }
 
             var repo = new OctopusRepository(_client, RepositoryScope.ForSpace(space));
-            var deployment = repo.Deployments.Create(newDeploy);
+            
+            try
+            {
+                var depResource = repo.Deployments.Create(newDeploy.Result);
+                depResult.Result = depResource.ToOctoDeployment();
+            }
+            catch (Exception ex)
+            {
+                depResult.Error.ParseException(ex);
+            }
 
-            // newDeploy.Id
-
-            return;
+            return depResult;
         }
 
-        private ProjectResource GetProjectOrThrow(string projectName)
+        private ActionResult<ProjectResource> GetProjectResult(string projectName)
         {
             CreateClient();
+            var result = new ActionResult<ProjectResource>();
+
             var repo = new OctopusRepository(_client);
             var project = repo.Projects.FindByName(_inputs.ProjectName);
 
             if (project == null)
             {
-                throw new Exception($"Project {_inputs.ProjectName} was not found");
+                result.Error.ErrorCount++;
+                result.Error.ErrorMessages.Add($"Project {_inputs.ProjectName} was not found");
             }
 
-            return project;
+            result.Result = project;
+            return result;
         }
 
-        private EnvironmentResource GetEnvironmentOrThrow(string envName)
+        private ActionResult<EnvironmentResource> GetEnvironmentResult(string envName)
         {
             CreateClient();
+            var result = new ActionResult<EnvironmentResource>();
             var repo = new OctopusRepository(_client);
             var environment = repo.Environments.FindByName(_inputs.EnvironmentName);
 
             if (environment == null)
             {
-                throw new Exception($"Environment {_inputs.EnvironmentName} was not found");
+                result.Error.ErrorCount++;
+                result.Error.ErrorMessages.Add($"Environment {_inputs.EnvironmentName} was not found");
             }
 
-            return environment;
+            result.Result = environment;
+            return result;
         }
     }
 }

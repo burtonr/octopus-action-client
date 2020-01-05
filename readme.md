@@ -15,6 +15,7 @@ GitHub Actions pass user input from their `workflow.yml` file to the action hand
     - `INPUT_RELEASE_VERSION`
 - RELEASE_ID
     - `INPUT_RELEASE_ID`
+    - _Used only for the "deploy" action_
 - ENVIRONMENT_NAME
     - `INPUT_ENVIRONMENT_NAME`
 - SPACE_NAME
@@ -25,7 +26,7 @@ GitHub Actions pass user input from their `workflow.yml` file to the action hand
 This action can be run and invoked locally by running the Docker container and passing the inputs as environment variable parameters and the desired action (in the example below, this is `release` to create a new Octopus Release)
 
 ```
-docker run -it \
+docker run --rm \
     -e INPUT_OCTOPUS_URL="https://your.octopus.url.com" \
     -e INPUT_API_KEY="YourGeneratedApiKey" \
     -e INPUT_PROJECT_NAME="Your Project" \
