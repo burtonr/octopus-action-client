@@ -47,7 +47,26 @@ namespace OctoClient
                 ProjectId = projectResult.Result.Id,
                 Version = _inputs.ReleaseVersion
             };
-            
+
+            var templateResult = GetTemplateResult(projectResult.Result);
+
+            if (templateResult.HasErrors())
+            {
+                releaseResult.Error.ErrorCount += templateResult.Error.ErrorCount;
+                releaseResult.Error.ErrorMessages.AddRange(templateResult.Error.ErrorMessages);
+            }
+
+            foreach (var package in templateResult.Result.Packages)
+            {
+                releaseResult.Result.SelectedPackages.Add(
+                    new SelectedPackage
+                    {
+                        ActionName = package.ActionName,
+                        PackageReferenceName = package.PackageReferenceName,
+                        Version = _inputs.ReleaseVersion
+                    }
+                );
+            }
 
             return releaseResult;
         }
@@ -153,6 +172,33 @@ namespace OctoClient
             }
 
             result.Result = project;
+            return result;
+        }
+
+        private ActionResult<ReleaseTemplateResource> GetTemplateResult(Octopus.Client.Model.ProjectResource projectResource)
+        {
+            CreateClient();
+            var result = new ActionResult<ReleaseTemplateResource>();
+
+            var repo = new OctopusRepository(_client);
+            var process = repo.DeploymentProcesses.Get(projectResource.DeploymentProcessId);
+
+            if (process == null)
+            {
+                result.Error.ErrorCount++;
+                result.Error.ErrorMessages.Add($"No Deployment Process was not found");
+            }
+
+            var channel = repo.Channels.FindByName(projectResource, _inputs.ChannelName);
+            var template = repo.DeploymentProcesses.GetTemplate(process, channel);
+
+            if (template == null)
+            {
+                result.Error.ErrorCount++;
+                result.Error.ErrorMessages.Add($"Release Template for {_inputs.ChannelName} channel was not found");
+            }
+
+            result.Result = template;
             return result;
         }
 

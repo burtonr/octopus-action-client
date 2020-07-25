@@ -15,7 +15,8 @@ namespace OctoClient
                 ProjectName = Environment.GetEnvironmentVariable("INPUT_PROJECT_NAME"),
                 ReleaseVersion = Environment.GetEnvironmentVariable("INPUT_RELEASE_VERSION"),
                 ReleaseId = Environment.GetEnvironmentVariable("INPUT_RELEASE_ID"),
-                EnvironmentName = Environment.GetEnvironmentVariable("INPUT_ENVIRONMENT_NAME")
+                EnvironmentName = Environment.GetEnvironmentVariable("INPUT_ENVIRONMENT_NAME"),
+                ChannelName = Environment.GetEnvironmentVariable("INPUT_CHANNEL_NAME")
             };
             
             var space = Environment.GetEnvironmentVariable("INPUT_SPACE_NAME");

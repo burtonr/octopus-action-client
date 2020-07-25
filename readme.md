@@ -13,6 +13,10 @@ GitHub Actions pass user input from their `workflow.yml` file to the action hand
     - `INPUT_PROJECT_NAME`
 - RELEASE_VERSION
     - `INPUT_RELEASE_VERSION`
+    - This is passed to Octopus Deploy as-is, so it must match their requirements:
+        - You can use standard version numbers with two, three or four components: (`2.3`, `2.3.16`, `2.3.16.384`)
+        - You can also include [semantic version](https://g.octopushq.com/SemVer) tags: (`2.3.16-beta`, `2.3.16.384-pre-release`)
+    - This version must exactly match the version of the package that will be released or deployed
 - RELEASE_ID
     - `INPUT_RELEASE_ID`
     - _Used only for the "deploy" action_
@@ -20,6 +24,9 @@ GitHub Actions pass user input from their `workflow.yml` file to the action hand
     - `INPUT_ENVIRONMENT_NAME`
 - SPACE_NAME
     - `INPUT_SPACE_NAME`
+    - _Optional: default value: `Default`_
+- CHANNEL_NAME
+    - `INPUT_CHANNEL_NAME`
     - _Optional: default value: `Default`_
 
 # Run Locally

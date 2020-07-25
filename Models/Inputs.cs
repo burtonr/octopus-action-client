@@ -9,6 +9,7 @@ namespace OctoClient.Models
         public string ReleaseVersion { get; set; }
         public string ReleaseId { get; set; }
         public string EnvironmentName { get; set; }
+        public string ChannelName { get; set; } = "Default";
 
         public OctoClientErrors ValidateCommonInputs()
         {
