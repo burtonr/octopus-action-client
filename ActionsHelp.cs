@@ -13,11 +13,16 @@ namespace OctoClient
                 OctopusURL = Environment.GetEnvironmentVariable("INPUT_OCTOPUS_URL"),
                 OctopusApiKey = Environment.GetEnvironmentVariable("INPUT_API_KEY"),
                 ProjectName = Environment.GetEnvironmentVariable("INPUT_PROJECT_NAME"),
-                ReleaseVersion = Environment.GetEnvironmentVariable("INPUT_RELEASE_VERSION"),
                 ReleaseId = Environment.GetEnvironmentVariable("INPUT_RELEASE_ID"),
                 EnvironmentName = Environment.GetEnvironmentVariable("INPUT_ENVIRONMENT_NAME"),
                 ChannelName = Environment.GetEnvironmentVariable("INPUT_CHANNEL_NAME")
             };
+
+            var version = Environment.GetEnvironmentVariable("INPUT_RELEASE_VERSION");
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                inputResult.Result.ReleaseVersion = version.Replace("refs/tags/", "");
+            }
             
             var space = Environment.GetEnvironmentVariable("INPUT_SPACE_NAME");
             if (!string.IsNullOrWhiteSpace(space))
