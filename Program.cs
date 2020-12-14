@@ -1,5 +1,4 @@
 ﻿using System;
-using OctoClient.Models;
 
 namespace OctoClient
 {
@@ -28,6 +27,14 @@ namespace OctoClient
 
             switch (args[0].ToLower())
             {
+                // TODO: Consider "pack" functionality. This comes from the Octopus CLI (dotnet tool)
+                // Possibly add the OctoCLI to the image and just call it directly from the calling action?
+                // Further reading: https://octopus.com/docs/packaging-applications/create-packages/octopus-cli
+                // For dotnet Core, they suggest using `dotnet pack` which tells me that "pack"-ing is an external process
+                // that should NOT be included in this tool
+                case "push": // TODO: Implement https://octopus.com/docs/octopus-rest-api/examples/feeds/push-package-to-builtin-feed
+                    Console.WriteLine("Not currently supported");
+                    return 1;
                 case "release":
                     inputs.Error = inputs.Result.ValidateForRelease();
                     if (inputs.HasErrors())
